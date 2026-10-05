@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore Black–Scholes call and put values, vary the inputs, and connect option pricing to present value.">
+  <title>Black–Scholes Explorer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23152333'/%3E%3Cpath d='M6 24Q17 24 26 7' fill='none' stroke='%232bd4a4' stroke-width='3'/%3E%3Cpath d='M6 7Q17 22 26 24' fill='none' stroke='%23f59870' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./pricing.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#inputs">Skip to inputs</a>
+  <header class="topbar">
+    <div class="brand"><span class="brandmark" aria-hidden="true">ƒ</span><span>OPTION STUDY</span></div>
+    <span class="privacy">European options · no dividends</span>
+  </header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">PRICE · CHANGE · UNDERSTAND</p><h1>Black–Scholes explorer</h1><p class="intro">Change an assumption. See what an option is worth today.</p></div><button id="reset" class="reset" type="button">Reset example</button></div>
+    <div class="workspace">
+      <section class="inputs panel" id="inputs" aria-labelledby="input-title">
+        <div class="section-heading"><h2 id="input-title">Your inputs</h2><span class="small">Drag or type</span></div>
+        <div class="field" data-key="S">
+          <div class="field-top"><label for="S-number">Spot price <span class="symbol">S</span></label><div class="number-box"><span aria-hidden="true">$</span><input id="S-number" type="number" min="0.01" max="1000000" step="any" value="100" aria-describedby="S-help"></div></div>
+          <input id="S-range" type="range" min="0.01" max="200" step="0.01" value="100" aria-label="Spot price slider" aria-describedby="S-help">
+          <p class="help" id="S-help">The stock’s price right now, per share.</p>
+        </div>
+        <div class="field" data-key="K">
+          <div class="field-top"><label for="K-number">Strike price <span class="symbol">K</span></label><div class="number-box"><span aria-hidden="true">$</span><input id="K-number" type="number" min="0.01" max="1000000" step="any" value="100" aria-describedby="K-help"></div></div>
+          <input id="K-range" type="range" min="0.01" max="200" step="0.01" value="100" aria-label="Strike price slider" aria-describedby="K-help">
+          <p class="help" id="K-help">The agreed price to buy or sell the share at expiry.</p>
+        </div>
+        <div class="field" data-key="T">
+          <div class="field-top"><label for="T-number">Time to expiry <span class="symbol">T</span></label><div class="number-box"><input id="T-number" type="number" min="0" max="10" step="any" value="1" aria-describedby="T-help T-days"><span aria-hidden="true">yr</span></div></div>
+          <input id="T-range" type="range" min="0" max="5" step="0.01" value="1" aria-label="Time to expiry slider" aria-describedby="T-help">
+          <p class="help" id="T-help">Years remaining: 6 months = 0.5 years.</p><p class="equivalent" id="T-days">About 365 calendar days</p>
+        </div>
+        <div class="field" data-key="r">
+          <div class="field-top"><label for="r-number">Risk-free rate <span class="symbol">r</span></label><div class="number-box"><input id="r-number" type="number" min="-20" max="50" step="any" value="5" aria-describedby="r-help"><span aria-hidden="true">%</span></div></div>
+          <input id="r-range" type="range" min="-5" max="15" step="0.1" value="5" aria-label="Risk-free rate slider, annual percent" aria-describedby="r-help">
+          <p class="help" id="r-help">Annual, continuously compounded. Used to discount future cash.</p>
+        </div>
+        <div class="field last" data-key="sigma">
+          <div class="field-top"><label for="sigma-number">Volatility <span class="symbol">σ</span></label><div class="number-box"><input id="sigma-number" type="number" min="0" max="300" step="any" value="20" aria-describedby="sigma-help"><span aria-hidden="true">%</span></div></div>
+          <input id="sigma-range" type="range" min="0" max="100" step="0.1" value="20" aria-label="Volatility slider, annual percent" aria-describedby="sigma-help">
+          <p class="help" id="sigma-help">How much annual returns can vary. 20% means σ = 0.20; it is not an expected return.</p>
+        </div>
+        <p class="error" id="input-error" role="alert" hidden></p>
+        <p class="input-note">All money values use the same currency. Prices are per share.</p>
+      </section>
+      <div class="output" id="output">
+        <div class="result-grid" aria-live="polite" aria-atomic="true">
+          <section class="result call"><div class="result-heading"><h2>Call value</h2><span>RIGHT TO BUY</span></div><p class="price" id="call-price">$10.45</p><p id="call-description">Pay $100.00 for a share at expiry, if you choose.</p><div class="intrinsic"><span>If expiry were now</span><strong id="call-intrinsic">$0.00</strong></div></section>
+          <section class="result put"><div class="result-heading"><h2>Put value</h2><span>RIGHT TO SELL</span></div><p class="price" id="put-price">$5.57</p><p id="put-description">Sell a share for $100.00 at expiry, if you choose.</p><div class="intrinsic"><span>If expiry were now</span><strong id="put-intrinsic">$0.00</strong></div></section>
+        </div>
+        <p class="results-note" id="result-note">Today’s theoretical premiums. The expiry payoffs depend on the stock price then.</p>
+        <section class="chart-panel panel" aria-labelledby="chart-title">
+          <div class="section-heading"><div><p class="eyebrow">ONE INPUT AT A TIME</p><h2 id="chart-title">What changes the value?</h2></div><div class="legend"><span class="call-key">Call</span><span class="put-key">Put</span></div></div>
+          <div class="sweep-buttons" role="group" aria-label="Input to vary in chart">
+            <button type="button" data-sweep="S" aria-pressed="true">Spot S</button><button type="button" data-sweep="K" aria-pressed="false">Strike K</button><button type="button" data-sweep="T" aria-pressed="false">Time T</button><button type="button" data-sweep="r" aria-pressed="false">Rate r</button><button type="button" data-sweep="sigma" aria-pressed="false">Volatility σ</button>
+          </div>
+          <div class="chart-readout"><span id="chart-at">Your spot: $100.00</span><span><span class="call-text" id="chart-call">Call $10.45</span><span class="put-text" id="chart-put">Put $5.57</span></span></div>
+          <svg id="chart" viewBox="0 0 760 330" role="img" tabindex="0" aria-labelledby="chart-svg-title chart-svg-description"><title id="chart-svg-title">Call and put value versus spot price</title><desc id="chart-svg-description">Other inputs stay fixed. Use the arrow keys to inspect points along the chart.</desc></svg>
+          <div class="chart-foot"><span>Dashed line = your input</span><span>Hover, touch, or use arrow keys to inspect</span></div>
+          <p class="insight" id="insight">A higher stock price makes the right to buy more valuable and the right to sell less valuable.</p>
+        </section>
+      </div>
+    </div>
+    <section class="pv-section" aria-labelledby="pv-title">
+      <div class="pv-heading"><p class="eyebrow">THE PV/FV CONNECTION</p><h2 id="pv-title">The strike is future money.<br>Discount it back to today.</h2><p>You already know that money paid later has a present value. Black–Scholes uses the same idea.</p></div>
+      <div class="pv-panel panel">
+        <div class="pv-values"><div><span>Strike paid at expiry · FV</span><strong id="pv-future">$100.00</strong></div><div class="discount-cell"><span>Discount factor</span><strong id="pv-factor">0.951229</strong></div><div><span>Value of that amount today · PV</span><strong class="pv-result" id="pv-today">$95.12</strong></div></div>
+        <div class="formula pv-formula">PV = FV × e<sup>−rT</sup><span id="pv-substitution">= 100 × e<sup>−0.05 × 1</sup> = 95.12</span></div>
+        <p id="pv-explanation">At 5% for 1 year, $95.12 today grows to $100.00 at expiry. That is why the formula uses the discounted strike, not the full future amount.</p>
+        <p class="rate-note" id="rate-equivalent">5% continuous is equivalent to 5.1271% effective annually.</p>
+        <p class="rate-note">With annual effective interest <em>i</em>, you learned PV = FV / (1 + i)<sup>T</sup>. Here 1 + i = e<sup>r</sup>, so the two discount factors match. If given an effective rate, convert it using r = ln(1 + i).</p>
+      </div>
+    </section>
+    <details class="math-details panel">
+      <summary>See how today’s option prices are calculated <span aria-hidden="true">+</span></summary>
+      <div class="math-content">
+        <div class="formula-grid"><div><p class="eyebrow call-text">CALL</p><p class="formula">C = S N(d₁) − PV(K) N(d₂)</p></div><div><p class="eyebrow put-text">PUT</p><p class="formula">P = PV(K) N(−d₂) − S N(−d₁)</p></div></div>
+        <p class="formula compact">d₁ = [ln(S/K) + (r + σ²/2)T] / (σ√T) &nbsp; · &nbsp; d₂ = d₁ − σ√T</p>
+        <p id="d-values">d₁ = 0.3500 · d₂ = 0.1500</p>
+        <p>N is the standard normal cumulative distribution function: it converts a d value into a number from 0 to 1. These terms account for uncertain future stock prices; discounting alone cannot price the option.</p>
+        <p>The model discounts an average future payoff under <strong>risk-neutral pricing</strong>, a no-arbitrage way of valuing risk. It does not use your forecast of the stock’s expected return or promise a risk-free option payoff.</p>
+        <div class="parity"><strong>Call − put = stock − PV(strike)</strong><span id="parity-values">10.45 − 5.57 = 100.00 − 95.12 = 4.88</span><p>This is put–call parity, a consistency check for matching European options.</p></div>
+        <p class="source">Formula reference: <a href="https://www.columbia.edu/~mh2078/FoundationsFE/BlackScholes.pdf" target="_blank" rel="noopener noreferrer">Columbia University · The Black-Scholes Model</a></p>
+      </div>
+    </details>
+    <footer><p><strong>Model scope:</strong> European options (exercise at expiry), no dividends, constant volatility and risk-free rate, and frictionless trading. Market prices and American option values can differ.</p><span>A learning tool · calculations stay in your browser</span></footer>
+    <noscript><p class="error">Enable JavaScript to calculate prices and interact with the chart.</p></noscript>
+  </main>
+</body>
+</html>
