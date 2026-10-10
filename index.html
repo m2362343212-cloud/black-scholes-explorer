@@ -14,7 +14,7 @@
   <a class="skip" href="#inputs">Skip to inputs</a>
   <header class="topbar">
     <div class="brand"><span class="brandmark" aria-hidden="true">ƒ</span><span>OPTION STUDY</span></div>
-    <span class="privacy">European options · no dividends</span>
+    <span class="privacy">European &amp; American options · no dividends</span>
   </header>
   <main>
     <div class="heading"><div><p class="eyebrow">PRICE · CHANGE · UNDERSTAND</p><h1>Black–Scholes explorer</h1><p class="intro">Change an assumption. See what an option is worth today.</p></div><button id="reset" class="reset" type="button">Reset example</button></div>
@@ -67,6 +67,49 @@
         </section>
       </div>
     </div>
+    <section class="model-section" id="models" aria-labelledby="models-title">
+      <div class="model-heading"><p class="eyebrow">PRICE MODELLING</p><h2 id="models-title">Same option, three pricing methods</h2><p>The closed-form formula, a binomial tree and a Monte Carlo simulation should agree on a European option. The tree can also price an American put, which may be worth exercising early.</p></div>
+      <div class="model-grid">
+        <section class="panel model-panel" aria-labelledby="compare-title">
+          <div class="section-heading"><h3 id="compare-title">Model comparison</h3><span class="small" id="model-status">Updated</span></div>
+          <div class="table-wrap"><table class="model-table">
+            <thead><tr><th scope="col">Method</th><th scope="col" class="call-text">Call</th><th scope="col" class="put-text">Put</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Black–Scholes formula<span>Exact closed form</span></th><td id="m-bs-call">—</td><td id="m-bs-put">—</td></tr>
+              <tr><th scope="row">Binomial tree<span>500 time steps (Cox–Ross–Rubinstein)</span></th><td id="m-tree-call">—</td><td id="m-tree-put">—</td></tr>
+              <tr><th scope="row">Monte Carlo<span>100,000 simulated paths · 95% range</span></th><td id="m-mc-call">—</td><td id="m-mc-put">—</td></tr>
+              <tr class="american-row"><th scope="row">American option (tree)<span>Can be exercised any day before expiry</span></th><td id="m-am-call">—</td><td id="m-am-put">—</td></tr>
+            </tbody>
+          </table></div>
+          <p class="model-note" id="early-note">Early exercise adds $0.00 to the put.</p>
+        </section>
+        <section class="panel model-panel" aria-labelledby="greeks-title">
+          <div class="section-heading"><h3 id="greeks-title">Greeks: how the price reacts</h3></div>
+          <div class="table-wrap"><table class="model-table greeks-table">
+            <thead><tr><th scope="col">Greek</th><th scope="col" class="call-text">Call</th><th scope="col" class="put-text">Put</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Delta Δ<span>Price change per $1 rise in S</span></th><td id="g-delta-call">—</td><td id="g-delta-put">—</td></tr>
+              <tr><th scope="row">Gamma Γ<span>Change in delta per $1 rise in S</span></th><td id="g-gamma-call">—</td><td id="g-gamma-put">—</td></tr>
+              <tr><th scope="row">Vega ν<span>Price change per 1 point of volatility</span></th><td id="g-vega-call">—</td><td id="g-vega-put">—</td></tr>
+              <tr><th scope="row">Theta Θ<span>Price change per calendar day passing</span></th><td id="g-theta-call">—</td><td id="g-theta-put">—</td></tr>
+              <tr><th scope="row">Rho ρ<span>Price change per 1 point rise in r</span></th><td id="g-rho-call">—</td><td id="g-rho-put">—</td></tr>
+            </tbody>
+          </table></div>
+          <p class="model-note" id="greeks-note">Greeks use the current inputs and the Black–Scholes formula.</p>
+        </section>
+        <section class="panel model-panel iv-panel" aria-labelledby="iv-title">
+          <div class="section-heading"><h3 id="iv-title">Implied volatility</h3></div>
+          <p class="model-note">Enter a market price. The calculator finds the volatility at which Black–Scholes gives that price, keeping S, K, T and r from your inputs.</p>
+          <div class="iv-controls">
+            <div class="iv-type" role="group" aria-label="Option type"><button type="button" data-iv="call" aria-pressed="true">Call</button><button type="button" data-iv="put" aria-pressed="false">Put</button></div>
+            <label class="iv-label" for="iv-price">Market price</label>
+            <div class="number-box iv-box"><span aria-hidden="true">$</span><input id="iv-price" type="number" min="0" step="any" value="12"></div>
+          </div>
+          <p class="iv-result" aria-live="polite"><span>Implied volatility</span><strong id="iv-output">—</strong></p>
+          <p class="model-note" id="iv-note"></p>
+        </section>
+      </div>
+    </section>
     <section class="pv-section" aria-labelledby="pv-title">
       <div class="pv-heading"><p class="eyebrow">THE PV/FV CONNECTION</p><h2 id="pv-title">The strike is future money.<br>Discount it back to today.</h2><p>You already know that money paid later has a present value. Black–Scholes uses the same idea.</p></div>
       <div class="pv-panel panel">
@@ -89,7 +132,7 @@
         <p class="source">Formula reference: <a href="https://www.columbia.edu/~mh2078/FoundationsFE/BlackScholes.pdf" target="_blank" rel="noopener noreferrer">Columbia University · The Black-Scholes Model</a></p>
       </div>
     </details>
-    <footer><p><strong>Model scope:</strong> European options (exercise at expiry), no dividends, constant volatility and risk-free rate, and frictionless trading. Market prices and American option values can differ.</p><span>A learning tool · calculations stay in your browser</span></footer>
+    <footer><p><strong>Model scope:</strong> European options (exercise at expiry) unless marked American, no dividends, constant volatility and risk-free rate, and frictionless trading. Market prices can differ from model values.</p><span>A learning tool · calculations stay in your browser</span></footer>
     <noscript><p class="error">Enable JavaScript to calculate prices and interact with the chart.</p></noscript>
   </main>
 </body>

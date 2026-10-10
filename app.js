@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const { price, validate, limits, defaults } = BlackScholes;
+  const { price, validate, limits, defaults, greeks, binomial, monteCarlo, impliedVolatility } = BlackScholes;
   const $ = id => document.getElementById(id);
   const names = { S: 'spot price', K: 'strike price', T: 'time to expiry', r: 'risk-free rate', sigma: 'volatility' };
   const symbols = { S: 'Spot price S', K: 'Strike price K', T: 'Time to expiry T (years)', r: 'Risk-free rate r (%)', sigma: 'Volatility σ (%)' };
@@ -14,7 +14,7 @@
   const money = x => '$' + x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const num = (x, digits = 4) => Number(x.toFixed(digits)).toLocaleString('en-US', { maximumFractionDigits: digits });
   const axisValue = (key, x) => key === 'S' || key === 'K' ? money(x) : key === 'T' ? `${num(x, 2)} yr` : `${num(x, 2)}%`;
-  let state = { ...defaults }, sweep = 'S', chartData, inspected = null;
+  let state = { ...defaults }, sweep = 'S', chartData, inspected = null, ivType = 'call', modelTimer = null;
   const svg = $('chart'), H = 330, left = 64, right = 21, top = 28, bottom = 63;
   let W = 760, plotW = W - left - right;
   const plotH = H - top - bottom;
@@ -67,6 +67,62 @@
     $('d-values').textContent = p.d1 === null ? (T === 0 ? 'At expiry, use the payoff directly; d₁ and d₂ are not needed.' : 'At zero volatility, use the discounted deterministic payoff; d₁ and d₂ are not defined.') : `With your inputs: d₁ = ${p.d1.toFixed(4)} · d₂ = ${p.d2.toFixed(4)}`;
     $('parity-values').textContent = `${num(p.call, 4)} − ${num(p.put, 4)} = ${num(S, 4)} − ${num(p.pvStrike, 4)} = ${num(S - p.pvStrike, 4)} (rounded)`;
     drawChart();
+    renderGreeks(); renderImpliedVol(); scheduleModels();
+  }
+
+  const signed = (x, digits) => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(digits);
+  function renderGreeks() {
+    const g = greeks(state), cells = ['delta', 'gamma', 'vega', 'theta', 'rho'];
+    if (!g) {
+      for (const k of cells) { $(`g-${k}-call`).textContent = '—'; $(`g-${k}-put`).textContent = '—'; }
+      $('greeks-note').textContent = state.T === 0 ? 'At expiry the price is just the payoff, so the Greeks are not defined.' : 'With zero volatility the price has no uncertainty, so the Greeks are not defined.';
+      return;
+    }
+    $('g-delta-call').textContent = signed(g.call.delta, 4); $('g-delta-put').textContent = signed(g.put.delta, 4);
+    $('g-gamma-call').textContent = g.gamma.toFixed(4); $('g-gamma-put').textContent = g.gamma.toFixed(4);
+    $('g-vega-call').textContent = signed(g.vega, 4); $('g-vega-put').textContent = signed(g.vega, 4);
+    $('g-theta-call').textContent = signed(g.call.theta, 4); $('g-theta-put').textContent = signed(g.put.theta, 4);
+    $('g-rho-call').textContent = signed(g.call.rho, 4); $('g-rho-put').textContent = signed(g.put.rho, 4);
+    $('greeks-note').textContent = `Example: if S rises by $1, the call gains about ${money(Math.abs(g.call.delta))} and the put ${g.put.delta < 0 ? 'loses' : 'gains'} about ${money(Math.abs(g.put.delta))}.`;
+  }
+  function scheduleModels() {
+    $('model-status').textContent = 'Calculating…';
+    clearTimeout(modelTimer); modelTimer = setTimeout(renderModels, 120); // the tree and simulation take ~60 ms, so wait until dragging pauses
+  }
+  function renderModels() {
+    const bs = price(state);
+    $('m-bs-call').textContent = money(bs.call); $('m-bs-put').textContent = money(bs.put);
+    let tree = null;
+    try { tree = binomial(state, 500); } catch (e) { /* tree needs more steps for these inputs */ }
+    if (tree) {
+      $('m-tree-call').textContent = money(tree.europeanCall); $('m-tree-put').textContent = money(tree.europeanPut);
+      $('m-am-call').textContent = money(tree.americanCall); $('m-am-put').textContent = money(tree.americanPut);
+      const premium = tree.americanPut - tree.europeanPut;
+      $('early-note').textContent = premium > 0.005
+        ? `Early exercise adds ${money(premium)} to the put (${(premium / Math.max(tree.europeanPut, 1e-9) * 100).toFixed(1)}%): when the stock is low enough, taking the strike now and earning interest on it beats waiting. An American call on a non-dividend stock is never worth exercising early, so it equals the European call.`
+        : 'Early exercise adds almost nothing here. It matters most for puts that are deep in the money when rates are high. An American call on a non-dividend stock equals the European call.';
+    } else {
+      for (const id of ['m-tree-call', 'm-tree-put', 'm-am-call', 'm-am-put']) $(id).textContent = '—';
+      $('early-note').textContent = 'With very low volatility and a high rate, a 500-step tree cannot keep the up-move probability between 0 and 1. Raise volatility or lower the rate.';
+    }
+    const mc = monteCarlo(state, 100000, 42), ci = x => x.standardError * 1.96;
+    $('m-mc-call').innerHTML = `${money(mc.call.price)}<small>± ${ci(mc.call).toFixed(2)}</small>`;
+    $('m-mc-put').innerHTML = `${money(mc.put.price)}<small>± ${ci(mc.put).toFixed(2)}</small>`;
+    $('model-status').textContent = 'Updated';
+  }
+  function renderImpliedVol() {
+    const raw = $('iv-price').value.trim(), market = raw === '' ? NaN : Number(raw);
+    if (!Number.isFinite(market)) { $('iv-output').textContent = '—'; $('iv-note').textContent = 'Enter a market price.'; return; }
+    try {
+      const iv = impliedVolatility(state, market, ivType);
+      $('iv-output').textContent = `${iv.toFixed(2)}%`;
+      const diff = iv - state.sigma;
+      $('iv-note').textContent = Math.abs(diff) < 0.01
+        ? `This matches your volatility input of ${num(state.sigma, 2)}%.`
+        : `The market is pricing in ${Math.abs(diff).toFixed(2)} points ${diff > 0 ? 'more' : 'less'} volatility than your input of ${num(state.sigma, 2)}%.`;
+    } catch (e) {
+      $('iv-output').textContent = '—'; $('iv-note').textContent = e.message;
+    }
   }
   function sweepBounds() {
     const value = state[sweep];
@@ -141,6 +197,12 @@
     else inspected = Math.max(chartData.min, Math.min(chartData.max, (inspected ?? state[sweep]) + (event.key === 'ArrowRight' ? 1 : -1) * (chartData.max - chartData.min) / 100));
     showInspection(inspected);
   });
+  $('iv-price').addEventListener('input', renderImpliedVol);
+  document.querySelectorAll('[data-iv]').forEach(button => button.addEventListener('click', () => {
+    ivType = button.dataset.iv;
+    document.querySelectorAll('[data-iv]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+    renderImpliedVol();
+  }));
   $('reset').addEventListener('click', () => {
     for (const [key, bounds] of Object.entries({ S: [0.01, 200], K: [0.01, 200], T: [0, 5], r: [-5, 15], sigma: [0, 100] })) { $(key + '-range').min = bounds[0]; $(key + '-range').max = bounds[1]; }
     setInputs({ ...defaults });

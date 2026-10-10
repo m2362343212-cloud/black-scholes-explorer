@@ -62,3 +62,43 @@ test('invalid inputs are rejected', () => {
     assert.throws(() => price({ ...defaults, ...change }));
   }
 });
+
+// ---------- pricing models beyond the closed form ----------
+const { greeks, binomial, monteCarlo, impliedVolatility } = require('../pricing.js');
+
+test('greeks match finite differences of the price', () => {
+  const g = greeks(defaults), h = 1e-4;
+  const at = changes => price({ ...defaults, ...changes });
+  near(g.call.delta, (at({ S: 100 + h }).call - at({ S: 100 - h }).call) / (2 * h), 1e-6);
+  near(g.gamma, (at({ S: 100 + h }).call - 2 * at({}).call + at({ S: 100 - h }).call) / (h * h), 1e-4);
+  near(g.vega, (at({ sigma: 20 + h }).call - at({ sigma: 20 - h }).call) / (2 * h), 1e-6);
+  near(g.put.delta, g.call.delta - 1, 1e-12);
+});
+
+test('binomial tree converges to Black–Scholes for European options', () => {
+  const tree = binomial(defaults, 2000), bs = price(defaults);
+  near(tree.europeanCall, bs.call, 0.01);
+  near(tree.europeanPut, bs.put, 0.01);
+});
+
+test('early exercise adds value to an American put but not to a call without dividends', () => {
+  const tree = binomial({ ...defaults, S: 80 }, 1000);
+  assert.ok(tree.americanPut > tree.europeanPut + 0.1, 'deep in-the-money American put should be worth more');
+  near(tree.americanCall, tree.europeanCall, 1e-9);
+});
+
+test('Monte Carlo agrees with Black–Scholes within its own error bars', () => {
+  const mc = monteCarlo(defaults, 200000, 7), bs = price(defaults);
+  assert.ok(Math.abs(mc.call.price - bs.call) < 3 * mc.call.standardError, `call ${mc.call.price} vs ${bs.call}`);
+  assert.ok(Math.abs(mc.put.price - bs.put) < 3 * mc.put.standardError, `put ${mc.put.price} vs ${bs.put}`);
+  near(monteCarlo(defaults, 1000, 7).call.price, monteCarlo(defaults, 1000, 7).call.price, 0); // same seed, same answer
+});
+
+test('implied volatility recovers the volatility used to make the price', () => {
+  for (const sigma of [5, 20, 60]) {
+    const input = { ...defaults, sigma, K: 110 };
+    near(impliedVolatility(input, price(input).call, 'call'), sigma, 1e-8);
+    near(impliedVolatility(input, price(input).put, 'put'), sigma, 1e-8);
+  }
+  assert.throws(() => impliedVolatility(defaults, 120, 'call'), /arbitrage/);
+});

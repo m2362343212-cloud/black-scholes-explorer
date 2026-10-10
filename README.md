@@ -1,6 +1,6 @@
 # Black–Scholes Explorer
 
-An interactive learning tool for pricing European call and put options and understanding how the model connects to present-value discounting.
+An interactive tool for pricing options three ways — the Black–Scholes formula, a binomial tree and Monte Carlo simulation — plus Greeks, American-put early exercise and implied volatility.
 
 ## Explore
 
@@ -9,6 +9,19 @@ An interactive learning tool for pricing European call and put options and under
 - Vary one input at a time in a sensitivity chart; inspect values with a pointer or arrow keys.
 - Follow the strike payment from future value to present value with a live numerical explanation.
 - Explore expiry, zero volatility, and negative interest rates.
+
+## Price modelling
+
+| Method | What it does | Check in the tests |
+| --- | --- | --- |
+| Black–Scholes formula | Exact closed-form price for European options | Put–call parity |
+| Binomial tree (CRR, 500 steps) | Steps the stock up or down through time and works backward from the payoff | Within $0.01 of Black–Scholes at 2,000 steps |
+| American option (tree) | Same tree, but checks at every node whether exercising now beats waiting | American put > European put when deep in the money; American call = European call |
+| Monte Carlo (100,000 paths) | Simulates prices at expiry, averages the discounted payoffs, reports a 95% range | Within 3 standard errors of Black–Scholes; same seed gives the same answer |
+| Greeks | Delta, gamma, vega, theta, rho from the formula | Match finite-difference estimates |
+| Implied volatility | Solves for the volatility that reproduces a market price (bisection) | Recovers 5%, 20% and 60%; rejects prices that would allow arbitrage |
+
+At the default inputs (S = K = 100, T = 1, r = 5%, σ = 20%) the European put is $5.57 and the American put is $6.09: the right to exercise early is worth about $0.52.
 
 ## Run locally
 
@@ -46,8 +59,8 @@ node --test tests/pricing.test.cjs
 
 - `index.html`: interface and plain-language explanations
 - `styles.css`: responsive styling
-- `app.js`: input updates and sensitivity-chart interactions
-- `pricing.js`: pricing formulas, input validation, and normal CDF approximation
+- `app.js`: input updates, sensitivity chart, model comparison, Greeks and implied-volatility panels
+- `pricing.js`: Black–Scholes, Greeks, binomial tree, Monte Carlo, implied volatility, input validation, and normal CDF approximation
 - `tests/pricing.test.cjs`: reproducible pricing checks
 
 Formula reference: [Columbia University — The Black-Scholes Model](https://www.columbia.edu/~mh2078/FoundationsFE/BlackScholes.pdf).
