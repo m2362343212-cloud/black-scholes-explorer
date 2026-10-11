@@ -10,6 +10,10 @@ An interactive tool for pricing options three ways — the Black–Scholes formu
 - Follow the strike payment from future value to present value with a live numerical explanation.
 - Explore expiry, zero volatility, and negative interest rates.
 
+## Research: are covered-call bank ETFs worth it?
+
+The [`covered-call/`](covered-call/) folder uses this pricer for a real question: does selling calls on Canadian bank stocks, as BMO's ZWB does, pay off against simply holding them (ZEB)? Since 2011, ZWB's distribution yield over the last year was more than twice ZEB's, but it returned 10.6% a year against 13.3%, with most of the cost landing in strong years. A from-scratch rebuild, fitted on 2011–2018 and tested on 2019–2026, shows how the strike and coverage choices change that trade-off. See the [study README](covered-call/README.md).
+
 ## Price modelling
 
 | Method | What it does | Check in the tests |

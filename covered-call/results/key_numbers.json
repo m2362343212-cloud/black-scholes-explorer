@@ -1,0 +1,22 @@
+{
+  "period": "2011-03-31 to 2026-10-09 (188 months)",
+  "fitted_moneyness": 0.03,
+  "fitted_vol_markup": -0.02,
+  "fit_in_sample": {
+    "months": 94,
+    "rmse_monthly": 0.00423904126503623,
+    "correlation": 0.6968098581618039,
+    "model_gap_annual": -0.006460343763456292,
+    "real_gap_annual": -0.01013185769814286
+  },
+  "fit_out_of_sample": {
+    "months": 94,
+    "rmse_monthly": 0.009194675585973176,
+    "correlation": 0.7000111162319416,
+    "model_gap_annual": -0.04594813950892365,
+    "real_gap_annual": -0.033273520182481156
+  },
+  "zwb_trailing_distribution_yield": 0.056410256410256404,
+  "zeb_trailing_distribution_yield": 0.024365200602687234,
+  "model_premium_yield_50pct": 0.03355705558116691
+}
